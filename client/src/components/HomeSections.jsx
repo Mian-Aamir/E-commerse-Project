@@ -1,5 +1,5 @@
 import { newArrivals } from "../data/mockProducts";
-import ProductCard from "./ProductCard";
+import Productcard from "./Productcard";
 
 const HomeSections = () => {
   return (
@@ -10,7 +10,7 @@ const HomeSections = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {newArrivals.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <Productcard key={product.id} product={product} />
           ))}
         </div>
       </div>
