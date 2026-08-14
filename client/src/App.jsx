@@ -2,6 +2,7 @@ import "./App.css";
 import { useState, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import DashboardHeader from "./components/DashboardHeader";
 import Hero from "./components/Hero";
 import CategoryShowcase from "./components/AllCategory";
 import HomeSections from "./components/HomeSections";
@@ -14,6 +15,8 @@ import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import UserDashboardPage from "./pages/UserDashboardPage";
+import SellerDashboardPage from "./pages/SellerDashboardPage";
 
 // The homepage groups together the sections that only belong on "/".
 // It also watches the URL hash (e.g. "/#new-arrivals-section") so that
@@ -46,6 +49,8 @@ const HomePage = () => {
 
 function App() {
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const location = useLocation();
+  const isDashboardRoute = location.pathname.startsWith("/dashboard");
 
   const toggleCategories = () => {
     setIsCategoriesOpen((prev) => !prev);
@@ -57,8 +62,14 @@ function App() {
 
   return (
     <div className="bg-blue-50 min-h-screen">
-      <Navbar onCategoriesClick={toggleCategories} />
-      <CategoryPanel isOpen={isCategoriesOpen} onClose={closeCategories} />
+      {isDashboardRoute ? (
+        <DashboardHeader />
+      ) : (
+        <>
+          <Navbar onCategoriesClick={toggleCategories} />
+          <CategoryPanel isOpen={isCategoriesOpen} onClose={closeCategories} />
+        </>
+      )}
 
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -69,9 +80,11 @@ function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/dashboard/user" element={<UserDashboardPage />} />
+        <Route path="/dashboard/seller" element={<SellerDashboardPage />} />
       </Routes>
 
-      <Footer />
+      {!isDashboardRoute && <Footer />}
     </div>
   );
 }

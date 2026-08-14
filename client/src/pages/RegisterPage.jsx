@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Mail, Lock, User, Phone, Store } from "lucide-react";
 
 const RegisterPage = () => {
-  const [role, setRole] = useState("user");
+  const [searchParams] = useSearchParams();
+  const roleFromUrl = searchParams.get("role");
+  const [role, setRole] = useState(roleFromUrl === "seller" ? "seller" : "user");
 
   return (
     <div className="max-w-md mx-auto px-4 py-16">

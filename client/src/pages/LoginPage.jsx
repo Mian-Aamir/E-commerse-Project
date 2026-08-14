@@ -1,9 +1,24 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
 
 const LoginPage = () => {
   const [role, setRole] = useState("user");
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // No backend yet, so we simulate a successful login, mark the user as
+    // logged in globally, and route to the matching dashboard.
+    login(role);
+    if (role === "user") {
+      navigate("/dashboard/user");
+    } else {
+      navigate("/dashboard/seller");
+    }
+  };
 
   return (
     <div className="max-w-md mx-auto px-4 py-16">
@@ -35,7 +50,7 @@ const LoginPage = () => {
           </button>
         </div>
 
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
             <Mail size={16} className="absolute left-3 top-3 text-slate-400" />
             <input

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Users,
   Wallet,
@@ -173,9 +174,12 @@ const SellerPage = () => {
             with us.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button className="bg-white hover:bg-slate-100 text-blue-700 px-8 py-3 rounded-md font-medium">
+            <Link
+              to="/register?role=seller"
+              className="bg-white hover:bg-slate-100 text-blue-700 px-8 py-3 rounded-md font-medium inline-block text-center"
+            >
               Sign Up as Seller
-            </button>
+            </Link>
             <button className="border border-white/60 hover:bg-white/10 text-white px-8 py-3 rounded-md font-medium">
               Learn More
             </button>
@@ -353,15 +357,16 @@ const SellerPage = () => {
                     </li>
                   ))}
                 </ul>
-                <button
-                  className={`w-full py-3 rounded-md font-medium ${
+                <Link
+                  to="/register?role=seller"
+                  className={`w-full py-3 rounded-md font-medium block text-center ${
                     plan.highlighted
                       ? "bg-white text-blue-700 hover:bg-slate-100"
                       : "bg-blue-600 text-white hover:bg-blue-700"
                   }`}
                 >
                   {plan.buttonText}
-                </button>
+                </Link>
               </div>
             ))}
           </div>
@@ -464,9 +469,12 @@ const SellerPage = () => {
                 programs.
               </p>
               <div className="flex items-center gap-5 flex-wrap">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-full">
+                <Link
+                  to="/register?role=seller"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-full inline-block"
+                >
                   Sign Up*
-                </button>
+                </Link>
                 <p className="text-sm text-slate-600 leading-snug">
                   Get <span className="font-semibold">10% back</span> on your
                   first

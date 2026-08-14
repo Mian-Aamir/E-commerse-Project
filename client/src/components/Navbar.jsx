@@ -1,11 +1,14 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Heart, ShoppingCart, Menu } from "lucide-react";
+import { Search, Heart, ShoppingCart, Menu, User } from "lucide-react";
 import { useCart } from "../hooks/useCart";
+import { useAuth } from "../hooks/useAuth";
 
 const Navbar = ({ onCategoriesClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { cartCount } = useCart();
+  const { isLoggedIn, role } = useAuth();
+  const dashboardPath = role === "seller" ? "/dashboard/seller" : "/dashboard/user";
 
   const categories = [
     "Home",
@@ -102,12 +105,29 @@ const Navbar = ({ onCategoriesClick }) => {
 
           {/* Icons section */}
           <div className="flex items-center gap-4 md:gap-5 text-slate-700 shrink-0 ml-auto md:ml-0 md:justify-self-end">
-            <Link to="/login" className="md:hidden text-sm font-medium cursor-pointer hover:text-blue-600">
-              Sign In
-            </Link>
-            <Link to="/login" className="hidden md:block cursor-pointer hover:text-blue-600 text-sm font-medium">
-              Sign In
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link to={dashboardPath} className="md:hidden text-sm font-medium cursor-pointer hover:text-blue-600">
+                  My Account
+                </Link>
+                <Link
+                  to={dashboardPath}
+                  className="hidden md:flex items-center gap-1.5 cursor-pointer hover:text-blue-600 text-sm font-medium"
+                >
+                  <User size={16} />
+                  My Account
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="md:hidden text-sm font-medium cursor-pointer hover:text-blue-600">
+                  Sign In
+                </Link>
+                <Link to="/login" className="hidden md:block cursor-pointer hover:text-blue-600 text-sm font-medium">
+                  Sign In
+                </Link>
+              </>
+            )}
 
             <Heart className="cursor-pointer hover:text-blue-600" size={22} />
 
