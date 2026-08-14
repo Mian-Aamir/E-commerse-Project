@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Heart, Minus, Plus, Star } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaTwitter } from "react-icons/fa";
 import { newArrivals } from "../data/mockProducts";
-import ProductCard from "../components/ProductCard";
+import Productcard from "../components/Productcard";
 import { useCart } from "../hooks/useCart";
 
 const ProductDetail = () => {
@@ -221,7 +221,7 @@ const ProductDetail = () => {
         <h2 className="text-xl font-bold text-slate-900 mb-4">Related Products</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {relatedProducts.map((item) => (
-            <ProductCard key={item.id} product={item} />
+            <Productcard key={item.id} product={item} />
           ))}
         </div>
       </div>

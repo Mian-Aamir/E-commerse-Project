@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { newArrivals } from "../data/mockProducts";
-import ProductCard from "../components/ProductCard";
+import Productcard from "../components/Productcard";
 
 const allCategories = [
   "Electronics",
@@ -182,7 +182,7 @@ const ProductListingPage = () => {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <Productcard key={product.id} product={product} />
               ))}
             </div>
           )}

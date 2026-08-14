@@ -9,7 +9,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { newArrivals } from "../data/mockProducts";
-import ProductCard from "../components/ProductCard";
+import Productcard from "../components/Productcard";
 import { useAuth } from "../hooks/useAuth";
 
 const menuItems = [
@@ -145,7 +145,7 @@ const UserDashboardPage = () => {
               <h2 className="font-semibold text-slate-900 mb-4">Wishlist</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {mockWishlist.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <Productcard key={product.id} product={product} />
                 ))}
               </div>
             </div>
@@ -246,7 +246,7 @@ const UserDashboardPage = () => {
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {recommended.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <Productcard key={product.id} product={product} />
               ))}
             </div>
           </div>
