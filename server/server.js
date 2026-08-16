@@ -14,7 +14,7 @@ const app = express();
 connectDB();
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'https://e-commerse-project-eight.vercel.app'],
   credentials: true
 }));
 app.use(express.json());
