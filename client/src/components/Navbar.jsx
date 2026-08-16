@@ -2,13 +2,16 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Heart, ShoppingCart, Menu, User } from "lucide-react";
 import { useCart } from "../hooks/useCart";
 import { useAuth } from "../hooks/useAuth";
+import { useWishlist } from "../hooks/useWishlist";
 
 const Navbar = ({ onCategoriesClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { cartCount } = useCart();
   const { isLoggedIn, role } = useAuth();
+  const { wishlist } = useWishlist();
   const dashboardPath = role === "seller" ? "/dashboard/seller" : "/dashboard/user";
+  const wishlistPath = `${dashboardPath}?tab=wishlist`;
 
   const categories = [
     "Home",
@@ -129,7 +132,14 @@ const Navbar = ({ onCategoriesClick }) => {
               </>
             )}
 
-            <Heart className="cursor-pointer hover:text-blue-600" size={22} />
+            <Link to={isLoggedIn ? wishlistPath : "/login"} className="relative cursor-pointer hover:text-blue-600">
+              <Heart size={22} />
+              {isLoggedIn && wishlist.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                  {wishlist.length}
+                </span>
+              )}
+            </Link>
 
             <Link to="/cart" className="relative cursor-pointer hover:text-blue-600">
               <ShoppingCart size={22} />

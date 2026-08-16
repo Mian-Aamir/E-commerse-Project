@@ -1,24 +1,68 @@
 import { useState } from "react";
 import { AuthContext } from "./AuthContextInstance";
+import api from "../api/axios";
+
+// Reads any existing session from localStorage once, before first render.
+// This avoids needing a useEffect just to sync state on mount.
+const getInitialAuthState = () => {
+  try {
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    if (token && savedUser) {
+      const parsedUser = JSON.parse(savedUser);
+      return { isLoggedIn: true, role: parsedUser.role, user: parsedUser };
+    }
+  } catch {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  }
+
+  return { isLoggedIn: false, role: null, user: null };
+};
 
 export const AuthProvider = ({ children }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [role, setRole] = useState(null);
+  const [authState, setAuthState] = useState(getInitialAuthState);
 
-  // No backend yet, so login just marks the user as logged in with the
-  // role they selected on the form.
-  const login = (selectedRole) => {
-    setIsLoggedIn(true);
-    setRole(selectedRole);
+  const login = async (email, password) => {
+    const { data } = await api.post("/auth/login", { email, password });
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data));
+
+    setAuthState({ isLoggedIn: true, role: data.role, user: data });
+
+    return data;
+  };
+
+  const register = async (formData) => {
+    const { data } = await api.post("/auth/register", formData);
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data));
+
+    setAuthState({ isLoggedIn: true, role: data.role, user: data });
+
+    return data;
   };
 
   const logout = () => {
-    setIsLoggedIn(false);
-    setRole(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setAuthState({ isLoggedIn: false, role: null, user: null });
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, role, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        isLoggedIn: authState.isLoggedIn,
+        role: authState.role,
+        user: authState.user,
+        login,
+        register,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

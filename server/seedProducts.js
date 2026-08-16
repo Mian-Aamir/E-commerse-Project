@@ -1,0 +1,177 @@
+require('dotenv').config();
+const connectDB = require('./config/db');
+const User = require('./models/User');
+const Product = require('./models/Product');
+
+const mockProducts = [
+  {
+    category: "Home Interiors",
+    name: "Modern Accent Armchair",
+    price: 258,
+    oldPrice: 300,
+    rating: 4,
+    reviews: 25,
+    badge: "New",
+    image: "https://picsum.photos/id/119/400/400",
+    images: [
+      "https://picsum.photos/id/119/500/500",
+      "https://picsum.photos/id/120/500/500",
+      "https://picsum.photos/id/121/500/500",
+      "https://picsum.photos/id/122/500/500",
+    ],
+    sku: "F119ARM",
+    sizes: ["SM", "MD", "LG"],
+    colors: ["#1e293b", "#a855f7", "#22c55e", "#eab308"],
+    description:
+      "A comfortable modern accent armchair designed for everyday living rooms. Built with a sturdy wooden frame and soft upholstery for lasting comfort.",
+  },
+  {
+    category: "Electronics",
+    name: "Smart Watch Active 2",
+    price: 449,
+    oldPrice: 500,
+    rating: 5,
+    reviews: 18,
+    badge: "Best Seller",
+    image: "https://picsum.photos/id/160/400/400",
+    images: [
+      "https://picsum.photos/id/160/500/500",
+      "https://picsum.photos/id/161/500/500",
+      "https://picsum.photos/id/162/500/500",
+      "https://picsum.photos/id/163/500/500",
+    ],
+    sku: "SW2ACT",
+    sizes: ["SM", "MD", "LG"],
+    colors: ["#1e293b", "#3b82f6", "#f43f5e"],
+    description:
+      "Track your workouts, heart rate, and daily activity with the Smart Watch Active 2. Long battery life and a bright always-on display keep you connected all day.",
+  },
+  {
+    category: "Electronics",
+    name: "Pro Over Ear Headphones",
+    price: 150,
+    oldPrice: null,
+    rating: 4,
+    reviews: 32,
+    badge: "New",
+    image: "https://picsum.photos/id/175/400/400",
+    images: [
+      "https://picsum.photos/id/175/500/500",
+      "https://picsum.photos/id/176/500/500",
+      "https://picsum.photos/id/177/500/500",
+      "https://picsum.photos/id/178/500/500",
+    ],
+    sku: "F175OEH",
+    sizes: ["One Size"],
+    colors: ["#1e293b", "#64748b", "#0ea5e9"],
+    description:
+      "Premium over ear headphones with active noise cancellation and rich, balanced sound. Padded ear cushions keep you comfortable during long listening sessions.",
+  },
+  {
+    category: "Clothes and Wear",
+    name: "Star Disrupt Sneakers",
+    price: 99,
+    oldPrice: 130,
+    rating: 4,
+    reviews: 21,
+    badge: null,
+    image: "https://picsum.photos/id/103/400/400",
+    images: [
+      "https://picsum.photos/id/103/500/500",
+      "https://picsum.photos/id/104/500/500",
+      "https://picsum.photos/id/105/500/500",
+      "https://picsum.photos/id/106/500/500",
+    ],
+    sku: "F103SNK",
+    sizes: ["SM", "MD", "LG", "XL"],
+    colors: ["#ffffff", "#1e293b", "#ef4444"],
+    description:
+      "Lightweight everyday sneakers with breathable mesh and a cushioned sole. Built for all day comfort, from errands to workouts.",
+  },
+  {
+    category: "Clothes and Wear",
+    name: "Embellished Camera Bag",
+    price: 240,
+    oldPrice: 260,
+    rating: 5,
+    reviews: 12,
+    badge: null,
+    image: "https://picsum.photos/id/21/400/400",
+    images: [
+      "https://picsum.photos/id/21/500/500",
+      "https://picsum.photos/id/22/500/500",
+      "https://picsum.photos/id/23/500/500",
+      "https://picsum.photos/id/24/500/500",
+    ],
+    sku: "F21CAM",
+    sizes: ["One Size"],
+    colors: ["#78350f", "#1e293b", "#f5f5f4"],
+    description:
+      "A stylish camera bag with padded compartments to protect your gear, plus extra pockets for lenses, cables, and accessories.",
+  },
+  {
+    category: "Electronics",
+    name: "VR Gaming Headset",
+    price: 245,
+    oldPrice: null,
+    rating: 4,
+    reviews: 9,
+    badge: "New",
+    image: "https://picsum.photos/id/180/400/400",
+    images: [
+      "https://picsum.photos/id/180/500/500",
+      "https://picsum.photos/id/181/500/500",
+      "https://picsum.photos/id/182/500/500",
+      "https://picsum.photos/id/183/500/500",
+    ],
+    sku: "F180VR",
+    sizes: ["One Size"],
+    colors: ["#0f172a", "#f8fafc"],
+    description:
+      "Immersive VR gaming headset with a high resolution display and adjustable straps for a secure, comfortable fit during long play sessions.",
+  },
+];
+
+const seedProducts = async () => {
+  try {
+    await connectDB();
+
+    // Step 1: find or create a test seller
+    let seller = await User.findOne({ email: 'seller@ecommerce.com' });
+
+    if (!seller) {
+      seller = await User.create({
+        name: 'Test Seller',
+        email: 'seller@ecommerce.com',
+        phone: '03001112222',
+        password: 'Seller@123',
+        role: 'seller',
+        storeName: 'Test Store',
+      });
+      console.log('Test seller created:', seller.email);
+    } else {
+      console.log('Test seller already exists:', seller.email);
+    }
+
+    // Step 2: clear old seeded products (optional, avoids duplicates on re-run)
+    await Product.deleteMany({ sellerId: seller._id });
+    console.log('Old seeded products removed');
+
+    // Step 3: insert mock products, approved by default
+    const productsToInsert = mockProducts.map((p) => ({
+      ...p,
+      sellerId: seller._id,
+      status: 'approved',
+    }));
+
+    const created = await Product.insertMany(productsToInsert);
+    console.log(`${created.length} products seeded successfully`);
+
+    process.exit();
+  } catch (error) {
+    console.error('Error seeding products:', error.message);
+    process.exit(1);
+  }
+};
+
+seedProducts();

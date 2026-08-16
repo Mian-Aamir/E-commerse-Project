@@ -1,21 +1,23 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-// Replace each image path with your own file placed inside the public folder.
-const categoryList = [
-  { name: "Electronics", image: "/category-electronics.png" },
-  { name: "Clothes and Wear", image: "/category-clothes.png" },
-  { name: "Home Interiors", image: "/category-home.png" },
-  { name: "Books and Magazines", image: "/category-books.png" },
-  { name: "Tools Equipment", image: "/category-tools.png" },
-  { name: "Sports and Outdoor", image: "/category-sports.png" },
-  { name: "Animal and Pets", image: "/category-pets.png" },
-  { name: "Toys for Kids", image: "/category-toys.png" },
-];
+import api from "../api/axios";
 
 const AllCategory = () => {
   const scrollRef = useRef(null);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await api.get("/categories");
+        setCategories(data);
+      } catch {
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const scrollByAmount = (amount) => {
     scrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
@@ -41,14 +43,13 @@ const AllCategory = () => {
         </div>
       </div>
 
-      {/* Horizontally scrollable row of category cards */}
       <div
         ref={scrollRef}
         className="flex gap-13 overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {categoryList.map((category) => (
+        {categories.map((category) => (
           <Link
-            key={category.name}
+            key={category._id}
             to={`/products?category=${encodeURIComponent(category.name)}`}
             className="shrink-0 w-44 md:w-70 cursor-pointer"
           >

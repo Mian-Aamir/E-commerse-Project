@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { CheckCircle2, Wallet, CreditCard } from "lucide-react";
 import { useCart } from "../hooks/useCart";
+import api from "../api/axios";
 
 const CheckoutPage = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -9,6 +10,8 @@ const CheckoutPage = () => {
 
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [placing, setPlacing] = useState(false);
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -21,11 +24,39 @@ const CheckoutPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handlePlaceOrder = (e) => {
+  const handlePlaceOrder = async (e) => {
     e.preventDefault();
-    // No backend yet, so we just simulate a successful order and clear the cart.
-    setOrderPlaced(true);
-    clearCart();
+    setError("");
+    setPlacing(true);
+
+    try {
+      const items = cartItems.map((item) => ({
+        productId: item.id,
+        size: item.size,
+        color: item.color,
+        quantity: item.quantity,
+      }));
+
+      await api.post("/orders", {
+        items,
+        address: {
+          fullName: formData.fullName,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+        },
+        paymentMethod,
+      });
+
+      setOrderPlaced(true);
+      clearCart();
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Could not place order. Please try again."
+      );
+    } finally {
+      setPlacing(false);
+    }
   };
 
   // Redirect if someone lands here with an empty cart, unless the order was just placed.
@@ -68,6 +99,12 @@ const CheckoutPage = () => {
       <form onSubmit={handlePlaceOrder} className="flex flex-col md:flex-row gap-8">
         {/* Left side, delivery address and payment method */}
         <div className="flex-1 space-y-6">
+          {error && (
+            <div className="bg-red-50 text-red-600 text-sm rounded-md px-4 py-3">
+              {error}
+            </div>
+          )}
+
           <div className="bg-white rounded-xl p-6 shadow-sm">
             <h2 className="font-semibold text-slate-900 mb-4">Delivery Address</h2>
 
@@ -212,9 +249,10 @@ const CheckoutPage = () => {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium"
+              disabled={placing}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium disabled:opacity-60"
             >
-              Place Order
+              {placing ? "Placing Order..." : "Place Order"}
             </button>
           </div>
         </div>

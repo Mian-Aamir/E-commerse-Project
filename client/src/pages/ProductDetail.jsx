@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Heart, Minus, Plus, Star } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaTwitter } from "react-icons/fa";
-import { newArrivals } from "../data/mockProducts";
+import api from "../api/axios";
 import Productcard from "../components/Productcard";
 import { useCart } from "../hooks/useCart";
 
@@ -10,7 +10,11 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const product = newArrivals.find((item) => String(item.id) === id);
+
+  const [product, setProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   const [activeImage, setActiveImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState(0);
@@ -18,8 +22,49 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
 
-  // If someone opens a product id that does not exist in the mock data.
-  if (!product) {
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setLoading(true);
+      setNotFound(false);
+      // Reset selectors when navigating from one product detail page to another
+      setActiveImage(0);
+      setSelectedSize(0);
+      setSelectedColor(0);
+      setQuantity(1);
+      setActiveTab("description");
+
+      try {
+        const { data } = await api.get(`/products/${id}`);
+        setProduct({ ...data, id: data._id });
+
+        // Fetch related products from the same category, excluding this one
+        const { data: allProducts } = await api.get("/products", {
+          params: { category: data.category },
+        });
+        const related = allProducts
+          .filter((item) => item._id !== data._id)
+          .slice(0, 5)
+          .map((item) => ({ ...item, id: item._id }));
+        setRelatedProducts(related);
+      } catch {
+        setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-20 text-center">
+        <p className="text-slate-500">Loading product...</p>
+      </div>
+    );
+  }
+
+  if (notFound || !product) {
     return (
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-20 text-center">
         <p className="text-slate-600">Product not found.</p>
@@ -29,8 +74,6 @@ const ProductDetail = () => {
       </div>
     );
   }
-
-  const relatedProducts = newArrivals.filter((item) => item.id !== product.id).slice(0, 5);
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-10">
@@ -217,14 +260,16 @@ const ProductDetail = () => {
       </div>
 
       {/* Related products */}
-      <div className="mt-14">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">Related Products</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {relatedProducts.map((item) => (
-            <Productcard key={item.id} product={item} />
-          ))}
+      {relatedProducts.length > 0 && (
+        <div className="mt-14">
+          <h2 className="text-xl font-bold text-slate-900 mb-4">Related Products</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            {relatedProducts.map((item) => (
+              <Productcard key={item.id} product={item} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,24 +1,15 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { newArrivals } from "../data/mockProducts";
+import api from "../api/axios";
 import Productcard from "../components/Productcard";
-
-const allCategories = [
-  "Electronics",
-  "Clothes and Wear",
-  "Home Interiors",
-  "Books and Magazines",
-  "Tools Equipment",
-  "Sports and Outdoor",
-  "Animal and Pets",
-  "Toys for Kids",
-];
 
 const ratingOptions = [4, 3, 2];
 
 const ProductListingPage = () => {
   const [searchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get("category");
+
+  const [allCategories, setAllCategories] = useState([]);
 
   const [selectedCategories, setSelectedCategories] = useState(
     categoryFromUrl ? [categoryFromUrl] : []
@@ -28,6 +19,22 @@ const ProductListingPage = () => {
   const [selectedRating, setSelectedRating] = useState(null);
   const [sortBy, setSortBy] = useState("default");
 
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await api.get("/categories");
+        setAllCategories(data.map((c) => c.name));
+      } catch {
+        setAllCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const toggleCategory = (category) => {
     setSelectedCategories((prev) =>
       prev.includes(category)
@@ -36,39 +43,45 @@ const ProductListingPage = () => {
     );
   };
 
-  // Recalculate the visible product list whenever a filter or the sort
-  // option changes, instead of on every render.
-  const filteredProducts = useMemo(() => {
-    let result = [...newArrivals];
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const params = {};
+      if (selectedCategories.length === 1) params.category = selectedCategories[0];
+      if (minPrice) params.minPrice = minPrice;
+      if (maxPrice) params.maxPrice = maxPrice;
+      if (selectedRating) params.rating = selectedRating;
 
-    if (selectedCategories.length > 0) {
-      result = result.filter((product) =>
-        selectedCategories.includes(product.category)
-      );
+      const { data } = await api.get("/products", { params });
+      let result = data.map((p) => ({ ...p, id: p._id }));
+
+      if (selectedCategories.length > 1) {
+        result = result.filter((product) =>
+          selectedCategories.includes(product.category)
+        );
+      }
+
+      if (sortBy === "price-low") {
+        result.sort((a, b) => a.price - b.price);
+      } else if (sortBy === "price-high") {
+        result.sort((a, b) => b.price - a.price);
+      } else if (sortBy === "rating") {
+        result.sort((a, b) => b.rating - a.rating);
+      }
+
+      setProducts(result);
+    } catch {
+      setError("Could not load products. Please try again later.");
+    } finally {
+      setLoading(false);
     }
-
-    if (minPrice) {
-      result = result.filter((product) => product.price >= Number(minPrice));
-    }
-
-    if (maxPrice) {
-      result = result.filter((product) => product.price <= Number(maxPrice));
-    }
-
-    if (selectedRating) {
-      result = result.filter((product) => product.rating >= selectedRating);
-    }
-
-    if (sortBy === "price-low") {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortBy === "price-high") {
-      result.sort((a, b) => b.price - a.price);
-    } else if (sortBy === "rating") {
-      result.sort((a, b) => b.rating - a.rating);
-    }
-
-    return result;
   }, [selectedCategories, minPrice, maxPrice, selectedRating, sortBy]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching on mount is expected here
+    fetchProducts();
+  }, [fetchProducts]);
 
   const clearFilters = () => {
     setSelectedCategories([]);
@@ -82,9 +95,7 @@ const ProductListingPage = () => {
       <h1 className="text-2xl font-bold text-slate-900 mb-6">All Products</h1>
 
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Filters sidebar */}
         <div className="w-full md:w-64 shrink-0 space-y-8">
-          {/* Category filter */}
           <div>
             <h3 className="font-semibold text-slate-900 mb-3">Category</h3>
             <div className="space-y-2">
@@ -105,7 +116,6 @@ const ProductListingPage = () => {
             </div>
           </div>
 
-          {/* Price range filter */}
           <div>
             <h3 className="font-semibold text-slate-900 mb-3">Price Range</h3>
             <div className="flex items-center gap-2">
@@ -127,7 +137,6 @@ const ProductListingPage = () => {
             </div>
           </div>
 
-          {/* Rating filter */}
           <div>
             <h3 className="font-semibold text-slate-900 mb-3">Rating</h3>
             <div className="space-y-2">
@@ -157,11 +166,10 @@ const ProductListingPage = () => {
           </button>
         </div>
 
-        {/* Product grid */}
         <div className="flex-1">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-slate-500">
-              {filteredProducts.length} products found
+              {loading ? "Loading..." : `${products.length} products found`}
             </p>
             <select
               value={sortBy}
@@ -175,13 +183,17 @@ const ProductListingPage = () => {
             </select>
           </div>
 
-          {filteredProducts.length === 0 ? (
+          {loading ? (
+            <p className="text-slate-500 text-sm py-10 text-center">Loading products...</p>
+          ) : error ? (
+            <p className="text-red-500 text-sm py-10 text-center">{error}</p>
+          ) : products.length === 0 ? (
             <p className="text-slate-500 text-sm py-10 text-center">
               No products match the selected filters.
             </p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <Productcard key={product.id} product={product} />
               ))}
             </div>

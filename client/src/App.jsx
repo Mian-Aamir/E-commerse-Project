@@ -17,6 +17,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import UserDashboardPage from "./pages/UserDashboardPage";
 import SellerDashboardPage from "./pages/SellerDashboardPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 
 // The homepage groups together the sections that only belong on "/".
 // It also watches the URL hash (e.g. "/#new-arrivals-section") so that
@@ -82,6 +83,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard/user" element={<UserDashboardPage />} />
         <Route path="/dashboard/seller" element={<SellerDashboardPage />} />
+        <Route path="/dashboard/admin" element={<AdminDashboardPage />} />
       </Routes>
 
       {!isDashboardRoute && <Footer />}

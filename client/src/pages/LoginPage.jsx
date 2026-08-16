@@ -4,19 +4,35 @@ import { Mail, Lock } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 
 const LoginPage = () => {
-  const [role, setRole] = useState("user");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // No backend yet, so we simulate a successful login, mark the user as
-    // logged in globally, and route to the matching dashboard.
-    login(role);
-    if (role === "user") {
-      navigate("/dashboard/user");
-    } else {
-      navigate("/dashboard/seller");
+    setError("");
+    setLoading(true);
+
+    try {
+      const data = await login(email, password);
+
+      // Redirect based on the REAL role returned by the backend
+      if (data.role === "admin") {
+        navigate("/dashboard/admin");
+      } else if (data.role === "seller") {
+        navigate("/dashboard/seller");
+      } else {
+        navigate("/dashboard/user");
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Login failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -30,25 +46,11 @@ const LoginPage = () => {
           Sign in to continue
         </p>
 
-        {/* Role toggle */}
-        <div className="flex bg-slate-100 rounded-md p-1 mb-6">
-          <button
-            onClick={() => setRole("user")}
-            className={`flex-1 py-2 rounded-md text-sm font-medium ${
-              role === "user" ? "bg-white shadow-sm text-blue-600" : "text-slate-500"
-            }`}
-          >
-            User
-          </button>
-          <button
-            onClick={() => setRole("seller")}
-            className={`flex-1 py-2 rounded-md text-sm font-medium ${
-              role === "seller" ? "bg-white shadow-sm text-blue-600" : "text-slate-500"
-            }`}
-          >
-            Seller
-          </button>
-        </div>
+        {error && (
+          <div className="bg-red-50 text-red-600 text-sm rounded-md px-3 py-2 mb-4">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
@@ -57,6 +59,8 @@ const LoginPage = () => {
               required
               type="email"
               placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-gray-300 rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500"
             />
           </div>
@@ -67,6 +71,8 @@ const LoginPage = () => {
               required
               type="password"
               placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-gray-300 rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500"
             />
           </div>
@@ -81,9 +87,10 @@ const LoginPage = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-md font-medium"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-md font-medium disabled:opacity-60"
           >
-            Sign In as {role === "user" ? "User" : "Seller"}
+            {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
 
