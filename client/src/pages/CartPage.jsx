@@ -1,10 +1,20 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "../hooks/useCart";
+import { useAuth } from "../hooks/useAuth";
 
 const CartPage = () => {
   const { cartItems, removeFromCart, updateQuantity, cartTotal } = useCart();
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
+
+  const handleCheckout = () => {
+  if (!isLoggedIn) {
+    navigate("/login?redirect=/checkout");
+  } else {
+    navigate("/checkout");
+  }
+};
 
   if (cartItems.length === 0) {
     return (
@@ -104,7 +114,7 @@ const CartPage = () => {
             </div>
 
             <button
-              onClick={() => navigate("/checkout")}
+              onClick={handleCheckout}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium"
             >
               Proceed to Checkout

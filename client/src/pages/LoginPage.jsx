@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 
@@ -9,6 +9,8 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
@@ -20,7 +22,9 @@ const LoginPage = () => {
       const data = await login(email, password);
 
       // Redirect based on the REAL role returned by the backend
-      if (data.role === "admin") {
+      if (redirectTo) {
+        navigate(redirectTo);
+      } else if (data.role === "admin") {
         navigate("/dashboard/admin");
       } else if (data.role === "seller") {
         navigate("/dashboard/seller");
