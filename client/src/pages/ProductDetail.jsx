@@ -84,7 +84,7 @@ const ProductDetail = () => {
             <img
               src={product.images[activeImage]}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           </div>
           <div className="flex gap-3">

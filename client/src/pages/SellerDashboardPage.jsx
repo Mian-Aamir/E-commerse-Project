@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, ShoppingBag, DollarSign, Plus, X, LogOut, Trash2, Pencil } from "lucide-react";
+import { Package, ShoppingBag, DollarSign, Plus, X, LogOut, Trash2, Pencil, Upload } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import api from "../api/axios";
 
@@ -21,7 +21,6 @@ const emptyFormData = {
   category: "",
   price: "",
   stock: "",
-  image: "",
   description: "",
 };
 
@@ -31,8 +30,6 @@ const SellerDashboardPage = () => {
 
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [products, setProducts] = useState([]);
-  const [orderCount, setOrderCount] = useState(0);
-  const [earnings, setEarnings] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -40,6 +37,16 @@ const SellerDashboardPage = () => {
   const [editingId, setEditingId] = useState(null);
 
   const [formData, setFormData] = useState(emptyFormData);
+
+  // Image handling: existing image URLs (when editing) + newly selected files
+  const [existingImages, setExistingImages] = useState([]); // URLs already on the product
+  const [newFiles, setNewFiles] = useState([]); // File objects picked just now
+  const [newFilePreviews, setNewFilePreviews] = useState([]); // local preview URLs for the files above
+  const [mainImageIndex, setMainImageIndex] = useState(0); // index into the combined images list
+  const [uploading, setUploading] = useState(false);
+
+  const [orderCount, setOrderCount] = useState(0);
+  const [earnings, setEarnings] = useState(0);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -69,44 +76,61 @@ const SellerDashboardPage = () => {
     }
   }, [user]);
 
-
   const fetchMyOrders = useCallback(async () => {
-  try {
-    const { data } = await api.get("/orders");
-    let count = 0;
-    let total = 0;
-    data.forEach((order) => {
-      order.items.forEach((item) => {
-        if (item.sellerId === user._id) {
-          count += 1;
-          total += item.price * item.quantity;
-        }
+    try {
+      const { data } = await api.get("/orders");
+      let count = 0;
+      let total = 0;
+      data.forEach((order) => {
+        order.items.forEach((item) => {
+          if (item.sellerId === user._id) {
+            count += 1;
+            total += item.price * item.quantity;
+          }
+        });
       });
-    });
-    setOrderCount(count);
-    setEarnings(total);
+      setOrderCount(count);
+      setEarnings(total);
     } catch {
       setOrderCount(0);
       setEarnings(0);
     }
-  },   [user]);
+  }, [user]);
 
   useEffect(() => {
     if (user?._id) {
-       // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching on mount is expected here
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching on mount is expected here
       fetchMyProducts();
       fetchMyOrders();
     }
   }, [user, fetchMyProducts, fetchMyOrders]);
 
+  // Clean up local preview URLs when they are no longer needed, to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      newFilePreviews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [newFilePreviews]);
+
+  const totalImageCount = existingImages.length + newFiles.length;
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const resetImageState = () => {
+    newFilePreviews.forEach((url) => URL.revokeObjectURL(url));
+    setExistingImages([]);
+    setNewFiles([]);
+    setNewFilePreviews([]);
+    setMainImageIndex(0);
   };
 
   const openAddForm = () => {
     setEditingId(null);
     setFormData({ ...emptyFormData, category: categoryOptions[0] || "" });
     setFormError("");
+    resetImageState();
     setShowAddForm(true);
   };
 
@@ -117,41 +141,100 @@ const SellerDashboardPage = () => {
       category: product.category,
       price: product.price,
       stock: product.stock || "",
-      image: product.image,
       description: product.description,
     });
     setFormError("");
+    newFilePreviews.forEach((url) => URL.revokeObjectURL(url));
+    setExistingImages(product.images && product.images.length > 0 ? product.images : [product.image]);
+    setNewFiles([]);
+    setNewFilePreviews([]);
+    setMainImageIndex(0);
     setShowAddForm(true);
+  };
+
+  const handleFileSelect = (e) => {
+    const selected = Array.from(e.target.files || []);
+    if (selected.length === 0) return;
+
+    const availableSlots = 5 - totalImageCount;
+    if (availableSlots <= 0) {
+      setFormError("You can upload a maximum of 5 images per product.");
+      e.target.value = "";
+      return;
+    }
+
+    const filesToAdd = selected.slice(0, availableSlots);
+    const previews = filesToAdd.map((file) => URL.createObjectURL(file));
+
+    setNewFiles((prev) => [...prev, ...filesToAdd]);
+    setNewFilePreviews((prev) => [...prev, ...previews]);
+    setFormError("");
+    e.target.value = ""; // allow selecting the same file again later if removed
+  };
+
+  // Combined list used for previewing and picking the main image.
+  // Existing (already uploaded) images come first, then newly picked files.
+  const combinedPreviews = [...existingImages, ...newFilePreviews];
+
+  const removeImageAt = (index) => {
+    if (index < existingImages.length) {
+      setExistingImages((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      const fileIndex = index - existingImages.length;
+      URL.revokeObjectURL(newFilePreviews[fileIndex]);
+      setNewFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+      setNewFilePreviews((prev) => prev.filter((_, i) => i !== fileIndex));
+    }
+    setMainImageIndex((prev) => {
+      if (prev === index) return 0;
+      if (prev > index) return prev - 1;
+      return prev;
+    });
   };
 
   const handleSubmitProduct = async (e) => {
     e.preventDefault();
     setFormError("");
+
+    if (totalImageCount === 0) {
+      setFormError("Please add at least one product image.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      const image =
-        formData.image || "https://picsum.photos/seed/newproduct/400/400";
+      // Upload any newly selected files to Cloudinary first
+      let uploadedUrls = [];
+      if (newFiles.length > 0) {
+        setUploading(true);
+        const fd = new FormData();
+        newFiles.forEach((file) => fd.append("images", file));
+        const { data } = await api.post("/upload", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        uploadedUrls = data.urls;
+        setUploading(false);
+      }
+
+      const allImages = [...existingImages, ...uploadedUrls];
+      const mainImage = allImages[mainImageIndex] || allImages[0];
+
+      const payload = {
+        name: formData.name,
+        category: formData.category,
+        price: Number(formData.price),
+        stock: Number(formData.stock),
+        description: formData.description || formData.name,
+        image: mainImage,
+        images: allImages,
+      };
 
       if (editingId) {
-        await api.put(`/products/${editingId}`, {
-          name: formData.name,
-          category: formData.category,
-          price: Number(formData.price),
-          stock: Number(formData.stock),
-          description: formData.description || formData.name,
-          image,
-          images: [image],
-        });
+        await api.put(`/products/${editingId}`, payload);
       } else {
         await api.post("/products", {
-          name: formData.name,
-          category: formData.category,
-          price: Number(formData.price),
-          stock: Number(formData.stock),
-          description: formData.description || formData.name,
-          image,
-          images: [image],
+          ...payload,
           sku: `SKU-${Date.now()}`,
           sizes: ["One Size"],
           colors: ["#1e293b"],
@@ -160,6 +243,7 @@ const SellerDashboardPage = () => {
 
       await fetchMyProducts();
       setFormData({ ...emptyFormData, category: categoryOptions[0] || "" });
+      resetImageState();
       setEditingId(null);
       setShowAddForm(false);
     } catch (err) {
@@ -169,6 +253,7 @@ const SellerDashboardPage = () => {
       );
     } finally {
       setSubmitting(false);
+      setUploading(false);
     }
   };
 
@@ -218,7 +303,7 @@ const SellerDashboardPage = () => {
           <p className="text-2xl font-bold text-slate-900">{products.length}</p>
           <p className="text-sm text-slate-500">Products Listed</p>
         </div>
-          <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-sm p-6">
           <ShoppingBag className="text-blue-600 mb-3" size={26} />
           <p className="text-2xl font-bold text-slate-900">{orderCount}</p>
           <p className="text-sm text-slate-500">Orders Received</p>
@@ -367,18 +452,55 @@ const SellerDashboardPage = () => {
                 </div>
               </div>
 
+              {/* Image upload section */}
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">
-                  Image URL (temporary, until real upload is connected)
+                  Product Images ({totalImageCount}/5) — tap an image to set it as the main photo
                 </label>
-                <input
-                  type="text"
-                  name="image"
-                  placeholder="https://example.com/image.jpg"
-                  value={formData.image}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500"
-                />
+
+                {combinedPreviews.length > 0 && (
+                  <div className="grid grid-cols-5 gap-2 mb-2">
+                    {combinedPreviews.map((src, index) => (
+                      <div key={index} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setMainImageIndex(index)}
+                          className={`w-full aspect-square rounded-md overflow-hidden border-2 ${
+                            index === mainImageIndex ? "border-blue-600" : "border-gray-200"
+                          }`}
+                        >
+                          <img src={src} alt="" className="w-full h-full object-cover" />
+                        </button>
+                        {index === mainImageIndex && (
+                          <span className="absolute -top-1.5 -left-1.5 bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded-full">
+                            Main
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeImageAt(index)}
+                          className="absolute -top-1.5 -right-1.5 bg-white rounded-full p-0.5 border border-gray-300 hover:text-red-500"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {totalImageCount < 5 && (
+                  <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-md py-3 text-sm text-slate-500 cursor-pointer hover:border-blue-400 hover:text-blue-600">
+                    <Upload size={16} />
+                    Upload from device (up to {5 - totalImageCount} more)
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg, image/webp"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
 
               <div>
@@ -399,13 +521,15 @@ const SellerDashboardPage = () => {
                 disabled={submitting}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-md text-sm font-medium disabled:opacity-60"
               >
-                {submitting
-                  ? editingId
-                    ? "Updating..."
-                    : "Submitting..."
-                  : editingId
-                    ? "Update Product"
-                    : "Submit for Approval"}
+                {uploading
+                  ? "Uploading images..."
+                  : submitting
+                    ? editingId
+                      ? "Updating..."
+                      : "Submitting..."
+                    : editingId
+                      ? "Update Product"
+                      : "Submit for Approval"}
               </button>
             </form>
           </div>
