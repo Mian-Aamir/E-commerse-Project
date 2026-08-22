@@ -38,7 +38,7 @@ const UserDashboardPage = () => {
   const tabFromUrl = searchParams.get("tab");
   const [activeSection, setActiveSection] = useState(tabFromUrl || "orders");
   const { logout, user } = useAuth();
-  const { wishlist, fetchWishlist, loaded: wishlistLoaded } = useWishlist();
+  const { wishlist, fetchWishlist, loaded: wishlistLoaded, clearWishlistState } = useWishlist();
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
@@ -85,6 +85,7 @@ const UserDashboardPage = () => {
 
   const handleLogout = () => {
     logout();
+    clearWishlistState();
     navigate("/");
   };
 
