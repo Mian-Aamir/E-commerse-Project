@@ -304,7 +304,7 @@ const AdminDashboardPage = () => {
                               {product.name}
                             </p>
                             <p className="text-xs text-slate-400">
-                              Seller: {product.sellerName} | ${product.price}
+                              Seller: {product.sellerName} | ${product.price} | Stock: {product.stock}
                             </p>
                           </div>
                           <button

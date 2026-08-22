@@ -23,6 +23,11 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    stock: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
     badge: {
       type: String,
       default: null, // "New" | "Best Seller" | null

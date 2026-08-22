@@ -135,6 +135,15 @@ const ProductDetail = () => {
                 ${product.oldPrice}
               </span>
             )}
+            {product.stock > 0 ? (
+              <p className="text-sm text-slate-500 mb-4">
+                {product.stock} in stock
+              </p>
+            ) : (
+              <p className="text-sm text-red-500 font-medium mb-4">
+                Out of stock
+              </p>
+            )}
           </div>
 
           {/* Size selector */}
@@ -185,8 +194,9 @@ const ProductDetail = () => {
               </button>
               <span className="px-4 text-sm font-medium">{quantity}</span>
               <button
-                onClick={() => setQuantity((prev) => prev + 1)}
-                className="px-3 py-2 hover:bg-slate-50"
+                onClick={() => setQuantity((prev) => Math.min(product.stock, prev + 1))}
+                disabled={quantity >= product.stock}
+                className="px-3 py-2 hover:bg-slate-50 disabled:opacity-40"
               >
                 <Plus size={16} />
               </button>
@@ -202,9 +212,10 @@ const ProductDetail = () => {
                 );
                 navigate("/cart");
               }}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium"
+              disabled={product.stock === 0}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add to Cart
+              {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
             </button>
 
             <button className="border rounded-md p-3 hover:bg-slate-50">

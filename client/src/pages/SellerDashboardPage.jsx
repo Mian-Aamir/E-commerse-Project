@@ -138,6 +138,7 @@ const SellerDashboardPage = () => {
           name: formData.name,
           category: formData.category,
           price: Number(formData.price),
+          stock: Number(formData.stock),
           description: formData.description || formData.name,
           image,
           images: [image],
@@ -147,6 +148,7 @@ const SellerDashboardPage = () => {
           name: formData.name,
           category: formData.category,
           price: Number(formData.price),
+          stock: Number(formData.stock),
           description: formData.description || formData.name,
           image,
           images: [image],
@@ -255,7 +257,9 @@ const SellerDashboardPage = () => {
                   <p className="font-medium text-slate-900 truncate">
                     {product.name}
                   </p>
-                  <p className="text-xs text-slate-400">{product.category}</p>
+                  <p className="text-xs text-slate-400">
+                    {product.category} | Stock: {product.stock}
+                  </p>
                 </div>
                 <span className="font-semibold text-slate-900 shrink-0">
                   ${product.price}

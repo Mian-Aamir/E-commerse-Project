@@ -19,12 +19,20 @@ const createOrder = async (req, res) => {
     const enrichedItems = [];
     let total = 0;
 
-    for (const item of items) {
+      for (const item of items) {
       const product = await Product.findById(item.productId);
       if (!product) {
         return res.status(404).json({ message: `Product not found: ${item.productId}` });
       }
-
+    
+      const requestedQty = item.quantity || 1;
+    
+      if (product.stock < requestedQty) {
+        return res.status(400).json({
+          message: `Only ${product.stock} unit(s) of "${product.name}" are available in stock. Please reduce the quantity.`,
+        });
+      }
+    
       enrichedItems.push({
         productId: product._id,
         sellerId: product.sellerId,
@@ -33,12 +41,18 @@ const createOrder = async (req, res) => {
         image: product.image,
         size: item.size,
         color: item.color,
-        quantity: item.quantity || 1,
+        quantity: requestedQty,
       });
-
-      total += product.price * (item.quantity || 1);
+    
+      total += product.price * requestedQty;
     }
 
+    // Deduct stock only after confirming every item has enough stock
+    for (const item of items) {
+      await Product.findByIdAndUpdate(item.productId, {
+        $inc: { stock: -(item.quantity || 1) },
+      });
+    }
     const order = await Order.create({
       userId: req.user._id,
       items: enrichedItems,

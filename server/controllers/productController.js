@@ -49,36 +49,37 @@ const getProductById = async (req, res) => {
 // Seller only
 const createProduct = async (req, res) => {
   try {
-    const {
-      name, price, oldPrice, badge, image, images,
-      sku, sizes, colors, description, category,
-    } = req.body;
-
-    if (!name || !price || !image || !sku || !description || !category) {
-      return res.status(400).json({ message: 'Please fill all required fields' });
-    }
-
-    const product = await Product.create({
-      name,
-      price,
-      oldPrice: oldPrice || null,
-      badge: badge || null,
-      image,
-      images: images || [],
-      sku,
-      sizes: sizes || [],
-      colors: colors || [],
-      description,
-      category,
-      sellerId: req.user._id, // from auth middleware
-      status: 'pending',
-    });
-
-    res.status(201).json(product);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+        const {
+          name, price, oldPrice, badge, image, images,
+          sku, sizes, colors, description, category, stock,
+        } = req.body;
+        
+        if (!name || !price || !image || !sku || !description || !category) {
+          return res.status(400).json({ message: 'Please fill all required fields' });
+        }
+        
+        const product = await Product.create({
+          name,
+          price,
+          oldPrice: oldPrice || null,
+          badge: badge || null,
+          image,
+          images: images || [],
+          sku,
+          sizes: sizes || [],
+          colors: colors || [],
+          description,
+          category,
+          stock: stock !== undefined ? Number(stock) : 0,
+          sellerId: req.user._id,
+          status: 'pending',
+        });
+      
+          res.status(201).json(product);
+        } catch (error) {
+          res.status(500).json({ message: error.message });
+        }
+      };
 
 // @route PUT /api/products/:id
 // Seller only (own products)
@@ -96,7 +97,7 @@ const updateProduct = async (req, res) => {
 
     const {
       name, price, oldPrice, badge, image, images,
-      sku, sizes, colors, description, category,
+      sku, sizes, colors, description, category, stock,
     } = req.body;
 
     if (name !== undefined) product.name = name;
@@ -110,6 +111,7 @@ const updateProduct = async (req, res) => {
     if (colors !== undefined) product.colors = colors;
     if (description !== undefined) product.description = description;
     if (category !== undefined) product.category = category;
+    if (stock !== undefined) product.stock = Number(stock);
 
     // Editing sends it back for approval, since the listing has changed
     product.status = 'pending';
