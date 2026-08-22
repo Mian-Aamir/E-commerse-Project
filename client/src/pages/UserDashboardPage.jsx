@@ -187,7 +187,7 @@ const UserDashboardPage = () => {
                             <img
                               src={item.image}
                               alt={item.name}
-                              className="w-14 h-14 rounded-md object-cover shrink-0"
+                              className="w-14 h-14 rounded-md object-contain shrink-0 bg-slate-50"
                             />
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-slate-900 truncate text-sm">

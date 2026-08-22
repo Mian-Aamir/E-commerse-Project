@@ -48,7 +48,7 @@ const CartPage = () => {
               <img
                 src={item.image}
                 alt={item.name}
-                className="w-20 h-20 rounded-lg object-cover shrink-0"
+                className="w-20 h-20 rounded-lg object-contain shrink-0 bg-slate-50"
               />
 
               <div className="flex-1 min-w-0">

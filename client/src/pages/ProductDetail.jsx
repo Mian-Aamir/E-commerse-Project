@@ -96,7 +96,7 @@ const ProductDetail = () => {
                   index === activeImage ? "border-blue-600" : "border-transparent"
                 }`}
               >
-                <img src={image} alt="" className="w-full h-full object-cover" />
+              <img src={image} alt="" className="w-full h-full object-contain bg-slate-50" />
               </button>
             ))}
           </div>
