@@ -1,8 +1,10 @@
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Heart, ShoppingCart, Menu, User } from "lucide-react";
 import { useCart } from "../hooks/useCart";
 import { useAuth } from "../hooks/useAuth";
 import { useWishlist } from "../hooks/useWishlist";
+import api from "../api/axios";
 
 const Navbar = ({ onCategoriesClick }) => {
   const navigate = useNavigate();
@@ -12,6 +14,56 @@ const Navbar = ({ onCategoriesClick }) => {
   const { wishlist } = useWishlist();
   const dashboardPath = role === "seller" ? "/dashboard/seller" : "/dashboard/user";
   const wishlistPath = `${dashboardPath}?tab=wishlist`;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchBoxRef = useRef(null);
+  
+  // Debounced live search: waits 300ms after typing stops before calling the API
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching on mount is expected here
+      setSuggestions([]);
+      return;
+    }
+  
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await api.get("/products", {
+          params: { search: searchQuery },
+        });
+        setSuggestions(data.slice(0, 5).map((p) => ({ ...p, id: p._id })));
+      } catch {
+        setSuggestions([]);
+      }
+    }, 300);
+  
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+  
+  // Close the suggestions dropdown when clicking outside the search box
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setShowSuggestions(false);
+    navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+  };
+  
+  const handleSuggestionClick = (productId) => {
+    setShowSuggestions(false);
+    setSearchQuery("");
+    navigate(`/product/${productId}`);
+  };
 
   const categories = [
     "Home",
@@ -95,15 +147,45 @@ const Navbar = ({ onCategoriesClick }) => {
           </Link>
 
           {/* Search bar, visible only on medium screens and up, centered within its column */}
-          <div className="hidden md:flex md:justify-self-center w-full max-w-xl">
-            <input
-              type="text"
-              placeholder="Search products"
-              className="w-full border border-gray-300 rounded-l-md px-4 py-2 outline-none focus:border-blue-500"
-            />
-            <button className="bg-blue-900 hover:bg-blue-700 text-white px-4 rounded-r-md shrink-0">
-              <Search size={18} />
-            </button>
+          <div ref={searchBoxRef} className="hidden md:flex md:justify-self-center w-full max-w-xl relative">
+            <form onSubmit={handleSearchSubmit} className="flex w-full">
+              <input
+                type="text"
+                placeholder="Search products"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                className="w-full border border-gray-300 rounded-l-md px-4 py-2 outline-none focus:border-blue-500"
+              />
+              <button type="submit" className="bg-blue-900 hover:bg-blue-700 text-white px-4 rounded-r-md shrink-0">
+                <Search size={18} />
+              </button>
+            </form>
+          
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 z-50 overflow-hidden">
+                {suggestions.map((product) => (
+                  <button
+                    key={product.id}
+                    onClick={() => handleSuggestionClick(product.id)}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 text-left"
+                  >
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-10 h-10 rounded-md object-contain bg-slate-50 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm text-slate-800 truncate">{product.name}</p>
+                      <p className="text-xs text-slate-400">${product.price}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Icons section */}
@@ -151,15 +233,45 @@ const Navbar = ({ onCategoriesClick }) => {
         </div>
 
         {/* Search bar, always visible on small screens, placed below the top row */}
-        <div className="md:hidden px-4 pb-3 flex">
-          <input
-            type="text"
-            placeholder="Search products"
-            className="w-full border border-gray-300 rounded-l-md px-4 py-2 outline-none focus:border-blue-500"
-          />
-          <button className="bg-blue-900 hover:bg-blue-700 text-white px-4 rounded-r-md shrink-0">
-            <Search size={18} />
-          </button>
+        <div className="md:hidden px-4 pb-3 flex relative">
+          <form onSubmit={handleSearchSubmit} className="flex w-full">
+            <input
+              type="text"
+              placeholder="Search products"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              className="w-full border border-gray-300 rounded-l-md px-4 py-2 outline-none focus:border-blue-500"
+            />
+            <button type="submit" className="bg-blue-900 hover:bg-blue-700 text-white px-4 rounded-r-md shrink-0">
+              <Search size={18} />
+            </button>
+          </form>
+        
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute top-full left-4 right-4 bg-white border border-gray-200 rounded-md shadow-lg mt-1 z-50 overflow-hidden">
+              {suggestions.map((product) => (
+                <button
+                  key={product.id}
+                  onClick={() => handleSuggestionClick(product.id)}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 text-left"
+                >
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-10 h-10 rounded-md object-contain bg-slate-50 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm text-slate-800 truncate">{product.name}</p>
+                    <p className="text-xs text-slate-400">${product.price}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Category shortcut links, always visible on small screens, placed below the search bar */}

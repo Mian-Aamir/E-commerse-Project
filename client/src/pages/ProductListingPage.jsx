@@ -14,6 +14,7 @@ const ProductListingPage = () => {
   const [selectedCategories, setSelectedCategories] = useState(
     categoryFromUrl ? [categoryFromUrl] : []
   );
+  const searchQuery = searchParams.get("search");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [selectedRating, setSelectedRating] = useState(null);
@@ -52,6 +53,7 @@ const ProductListingPage = () => {
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
       if (selectedRating) params.rating = selectedRating;
+      if (searchQuery) params.search = searchQuery;
 
       const { data } = await api.get("/products", { params });
       let result = data.map((p) => ({ ...p, id: p._id }));
@@ -76,7 +78,7 @@ const ProductListingPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedCategories, minPrice, maxPrice, selectedRating, sortBy]);
+  }, [selectedCategories, minPrice, maxPrice, selectedRating, sortBy, searchQuery]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching on mount is expected here
@@ -92,7 +94,9 @@ const ProductListingPage = () => {
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8">
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">All Products</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">
+        {searchQuery ? `Search results for "${searchQuery}"` : "All Products"}
+      </h1>
 
       <div className="flex flex-col md:flex-row gap-8">
         <div className="w-full md:w-64 shrink-0 space-y-8">

@@ -4,7 +4,7 @@ const Product = require('../models/Product');
 // Public - only approved products, with filters
 const getProducts = async (req, res) => {
   try {
-    const { category, minPrice, maxPrice, rating, sellerId } = req.query;
+    const { category, minPrice, maxPrice, rating, sellerId, search } = req.query;
 
     const filter = {};
 
@@ -18,6 +18,9 @@ const getProducts = async (req, res) => {
 
     if (category) filter.category = category;
     if (rating) filter.rating = { $gte: Number(rating) };
+    if (search) {
+      filter.name = { $regex: search, $options: 'i' }; // case-insensitive partial match
+    }
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = Number(minPrice);

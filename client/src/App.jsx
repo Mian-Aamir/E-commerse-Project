@@ -1,3 +1,4 @@
+import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 import { useState, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
@@ -81,9 +82,30 @@ function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/dashboard/user" element={<UserDashboardPage />} />
-        <Route path="/dashboard/seller" element={<SellerDashboardPage />} />
-        <Route path="/dashboard/admin" element={<AdminDashboardPage />} />
+        <Route
+          path="/dashboard/user"
+          element={
+            <ProtectedRoute allowedRoles={["user"]}>
+              <UserDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/seller"
+          element={
+            <ProtectedRoute allowedRoles={["seller"]}>
+              <SellerDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminDashboardPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
 
       {!isDashboardRoute && <Footer />}
