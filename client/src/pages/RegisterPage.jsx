@@ -16,15 +16,53 @@ const RegisterPage = () => {
   const [storeName, setStoreName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+
+  // Field-specific errors instead of one generic error box
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const validate = () => {
+    const errors = {};
+
+    if (!name.trim()) {
+      errors.name = "Full name is required";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    const phoneRegex = /^[0-9]{10,15}$/;
+    if (!phoneRegex.test(phone)) {
+      errors.phone = "Enter a valid phone number (10-15 digits, numbers only)";
+    }
+
+    if (role === "seller" && !storeName.trim()) {
+      errors.storeName = "Business/Store name is required";
+    }
+
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      errors.password = "At least 8 characters with a letter and a number";
+    }
+
+    if (confirmPassword !== password) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+
+    return errors;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setSubmitError("");
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    const errors = validate();
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
       return;
     }
 
@@ -45,7 +83,7 @@ const RegisterPage = () => {
         navigate("/dashboard/user");
       }
     } catch (err) {
-      setError(
+      setSubmitError(
         err.response?.data?.message || "Registration failed. Please try again."
       );
     } finally {
@@ -63,9 +101,9 @@ const RegisterPage = () => {
           Join us and start shopping or selling today
         </p>
 
-        {error && (
+        {submitError && (
           <div className="bg-red-50 text-red-600 text-sm rounded-md px-3 py-2 mb-4">
-            {error}
+            {submitError}
           </div>
         )}
 
@@ -92,78 +130,118 @@ const RegisterPage = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <User size={16} className="absolute left-3 top-3 text-slate-400" />
-            <input
-              required
-              type="text"
-              placeholder="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500"
-            />
+          <div>
+            <div className="relative">
+              <User size={16} className="absolute left-3 top-3 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={`w-full border rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500 ${
+                  fieldErrors.name ? "border-red-400" : "border-gray-300"
+                }`}
+              />
+            </div>
+            {fieldErrors.name && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
+            )}
           </div>
 
-          <div className="relative">
-            <Mail size={16} className="absolute left-3 top-3 text-slate-400" />
-            <input
-              required
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-gray-300 rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500"
-            />
+          <div>
+            <div className="relative">
+              <Mail size={16} className="absolute left-3 top-3 text-slate-400" />
+              <input
+                type="email"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`w-full border rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500 ${
+                  fieldErrors.email ? "border-red-400" : "border-gray-300"
+                }`}
+              />
+            </div>
+            {fieldErrors.email && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
+            )}
           </div>
 
-          <div className="relative">
-            <Phone size={16} className="absolute left-3 top-3 text-slate-400" />
-            <input
-              required
-              type="tel"
-              placeholder="Phone Number"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full border border-gray-300 rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500"
-            />
+          <div>
+            <div className="relative">
+              <Phone size={16} className="absolute left-3 top-3 text-slate-400" />
+              <input
+                type="tel"
+                placeholder="Phone Number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className={`w-full border rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500 ${
+                  fieldErrors.phone ? "border-red-400" : "border-gray-300"
+                }`}
+              />
+            </div>
+            {fieldErrors.phone && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.phone}</p>
+            )}
           </div>
 
           {role === "seller" && (
-            <div className="relative">
-              <Store size={16} className="absolute left-3 top-3 text-slate-400" />
-              <input
-                required
-                type="text"
-                placeholder="Business / Store Name"
-                value={storeName}
-                onChange={(e) => setStoreName(e.target.value)}
-                className="w-full border border-gray-300 rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500"
-              />
+            <div>
+              <div className="relative">
+                <Store size={16} className="absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Business / Store Name"
+                  value={storeName}
+                  onChange={(e) => setStoreName(e.target.value)}
+                  className={`w-full border rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500 ${
+                    fieldErrors.storeName ? "border-red-400" : "border-gray-300"
+                  }`}
+                />
+              </div>
+              {fieldErrors.storeName && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.storeName}</p>
+              )}
             </div>
           )}
 
-          <div className="relative">
-            <Lock size={16} className="absolute left-3 top-3 text-slate-400" />
-            <input
-              required
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500"
-            />
+          <div>
+            <div className="relative">
+              <Lock size={16} className="absolute left-3 top-3 text-slate-400" />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`w-full border rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500 ${
+                  fieldErrors.password ? "border-red-400" : "border-gray-300"
+                }`}
+              />
+            </div>
+            {fieldErrors.password ? (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
+            ) : (
+              <p className="text-xs text-slate-400 mt-1">
+                Must be at least 8 characters with a letter and a number
+              </p>
+            )}
           </div>
 
-          <div className="relative">
-            <Lock size={16} className="absolute left-3 top-3 text-slate-400" />
-            <input
-              required
-              type="password"
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500"
-            />
+          <div>
+            <div className="relative">
+              <Lock size={16} className="absolute left-3 top-3 text-slate-400" />
+              <input
+                type="password"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`w-full border rounded-md pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-500 ${
+                  fieldErrors.confirmPassword ? "border-red-400" : "border-gray-300"
+                }`}
+              />
+            </div>
+            {fieldErrors.confirmPassword && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.confirmPassword}</p>
+            )}
           </div>
 
           <label className="flex items-start gap-2 text-sm text-slate-600">

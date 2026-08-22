@@ -13,6 +13,26 @@ const registerUser = async (req, res) => {
     if (!name || !email || !phone || !password) {
       return res.status(400).json({ message: 'Please fill all required fields' });
     }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Please enter a valid email address' });
+    }
+    
+    // Phone validation: digits only, 10-15 characters
+    const phoneRegex = /^[0-9]{10,15}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({ message: 'Please enter a valid phone number (10-15 digits, numbers only)' });
+    }
+    
+    // Password strength validation: min 8 chars, at least one letter and one number
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters long and include at least one letter and one number',
+      });
+    }
 
     // SECURITY: never trust role from client for "admin"
     // Only allow "user" or "seller" through registration, default to "user"
